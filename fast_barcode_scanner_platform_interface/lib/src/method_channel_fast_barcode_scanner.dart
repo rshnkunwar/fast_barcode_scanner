@@ -93,12 +93,18 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
 
   @override
   Future<List<Barcode>?> scanImage(ImageSource source) async {
-    final List<Object?>? response = await _channel.invokeMethod(
-      'scan',
-      source.data,
-    );
-
-    return response?.map((e) => Barcode(e as List<dynamic>)).toList();
+    try {
+      final List<Object?>? response = await _channel.invokeMethod(
+        'scan',
+        source.data,
+      );
+      final barcodes =
+          response?.map((e) => Barcode(e as List<dynamic>)).toList();
+      return barcodes;
+    } catch (e) {
+      assert(false, "Error converting barcode to dart type, original: $e");
+      rethrow;
+    }
   }
 
   void _handlePlatformBarcodeEvent(dynamic data) {
@@ -109,10 +115,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
       _onDetectionHandler?.call(barcodes);
       // ignore: empty_catches
     } catch (e) {
-      assert(
-        true,
-        "Error converting barcode from native side, original error: $e",
-      );
+      assert(false, "Error converting barcode to dart type, original: $e");
     }
   }
 }
