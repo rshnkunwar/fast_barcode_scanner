@@ -17,20 +17,19 @@ typedef OnDetectionHandler = void Function(List<Barcode>);
 abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   FastBarcodeScannerPlatform() : super(token: _token);
 
-  static const Object _token = Object();
+  static final Object _token = Object();
 
   static FastBarcodeScannerPlatform _instance =
       MethodChannelFastBarcodeScanner();
 
-  /// The instance of [FastBarcodeScannerPlatform] in use.
+  /// The concrete instance of [FastBarcodeScannerPlatform] in use.
   ///
+  /// Set your own platform implementation using this property.
   /// Defaults to [MethodChannelFastBarcodeScanner].
   static FastBarcodeScannerPlatform get instance => _instance;
 
-  /// Platform specific plugins should set this with their own platform-specific
-  /// class that extends [FastBarcodeScannerPlatform] when they register themselves.
   static set instance(FastBarcodeScannerPlatform instance) {
-    PlatformInterface.verifyToken(instance, _token);
+    PlatformInterface.verify(instance, _token);
     _instance = instance;
   }
 
