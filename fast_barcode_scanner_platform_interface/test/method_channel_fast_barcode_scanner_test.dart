@@ -30,16 +30,15 @@ void main() {
       scanner = MethodChannelFastBarcodeScanner();
     });
 
-    test('Should initialize camera and return a `PreviewConfiguration`',
-        () async {
+    test('Should initialize camera and return a `CameraInformation`', () async {
       // Act
       final response = await scanner.init(
-        [BarcodeType.ean13],
-        Resolution.hd1080,
-        Framerate.fps60,
-        DetectionMode.pauseDetection,
-        CameraPosition.back,
-      );
+          [BarcodeType.ean13],
+          Resolution.hd1080,
+          Framerate.fps60,
+          DetectionMode.pauseDetection,
+          CameraPosition.back,
+          const ApiOptions());
 
       // Assert
       expect(mockChannel.log, [
@@ -48,13 +47,13 @@ void main() {
           'mode': 'pauseDetection',
           'res': 'hd1080',
           'fps': 'fps60',
-          'pos': 'back'
+          'pos': 'back',
         }),
       ]);
 
       expect(
         response,
-        PreviewConfiguration({
+        CameraInformation({
           'textureId': 0,
           'targetRotation': 0,
           'height': 1080,
@@ -226,7 +225,7 @@ void main() {
         })
       ]);
       expect(
-        PreviewConfiguration({
+        CameraInformation({
           'textureId': 0,
           'targetRotation': 0,
           'height': 720,

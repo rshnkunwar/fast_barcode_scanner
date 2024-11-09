@@ -1,6 +1,6 @@
 import AVFoundation
 
-typealias AVMetadataObjectBoundsConverter = (AVMetadataObject) -> AVMetadataObject?
+typealias AVMetadataObjectBoundsConverter = @MainActor (AVMetadataObject) -> AVMetadataObject?
 
 class AVFoundationBarcodeScanner: NSObject, BarcodeScanner, AVCaptureMetadataOutputObjectsDelegate {
 
@@ -63,7 +63,8 @@ class AVFoundationBarcodeScanner: NSObject, BarcodeScanner, AVCaptureMetadataOut
   func stop() {
     output.setMetadataObjectsDelegate(nil, queue: nil)
   }
-
+    
+    @MainActor
   func metadataOutput(
     _ output: AVCaptureMetadataOutput,
     didOutput metadataObjects: [AVMetadataObject],
@@ -75,13 +76,11 @@ class AVFoundationBarcodeScanner: NSObject, BarcodeScanner, AVCaptureMetadataOut
     for metadata in metadataObjects {
       guard
         let readableCode = metadata as? AVMetadataMachineReadableCodeObject,
+        let boundingBox = objectBoundsConverter(readableCode)?.bounds,
         var type = flutterMetadataObjectTypes[readableCode.type],
-        var value = readableCode.stringValue,
-        let boundingBox = DispatchQueue.main.sync(execute: {
-          objectBoundsConverter(readableCode)?.bounds
-        })
-      else { continue }
-
+        var value = readableCode.stringValue
+    else { continue }
+        
       // Fix UPC-A, see https://developer.apple.com/library/archive/technotes/tn2325/_index.html#//apple_ref/doc/uid/DTS40013824-CH1-IS_UPC_A_SUPPORTED_
       if readableCode.type == .ean13 {
         if value.hasPrefix("0") {

@@ -1,5 +1,4 @@
 import 'package:fast_barcode_scanner/fast_barcode_scanner.dart';
-import 'package:fast_barcode_scanner_example/scanning_screen/scanning_overlay_config.dart';
 import 'package:flutter/material.dart';
 
 import '../configure_screen/configure_screen.dart';
@@ -10,12 +9,12 @@ import 'scans_counter.dart';
 class ScanningScreen extends StatefulWidget {
   const ScanningScreen({
     super.key,
+    this.apiMode = const ApiOptions(),
     required this.dispose,
-    this.appleApiMode = const AppleApiMode.avFoundation(),
   });
 
+  final ApiOptions apiMode;
   final bool dispose;
-  final AppleApiMode? appleApiMode;
 
   @override
   State<ScanningScreen> createState() => _ScanningScreenState();
@@ -25,7 +24,9 @@ class _ScanningScreenState extends State<ScanningScreen> {
   final _torchIconState = ValueNotifier(false);
   final _cameraRunning = ValueNotifier(true);
   final _scannerRunning = ValueNotifier(true);
+
   bool _isShowingBottomSheet = false;
+
   final greenPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.0
@@ -39,13 +40,12 @@ class _ScanningScreenState extends State<ScanningScreen> {
     ..strokeJoin = StrokeJoin.bevel
     ..color = Colors.orange;
 
-  ScanningOverlayConfig _scanningOverlayConfig = ScanningOverlayConfig(
-    availableOverlays: ScanningOverlayType.values,
-    enabledOverlays: [
-      ScanningOverlayType.materialOverlay,
-      ScanningOverlayType.codeBoundaryOverlay,
-    ],
-  );
+  final availableOverlays = ["Boundary", "Material", "Blur"];
+
+  var enabledOverlays = [
+    "Material",
+    "Boundary",
+  ];
 
   final cam = CameraController.shared;
 
@@ -64,7 +64,8 @@ class _ScanningScreenState extends State<ScanningScreen> {
           IconButton(
             icon: const Icon(Icons.info),
             onPressed: () {
-              final preview = cam.state.previewConfig;
+              final preview = cam.state.value.cameraInformation;
+
               if (preview != null) {
                 showDialog(
                   context: context,
@@ -72,14 +73,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
                     title: const Text("Preview Config"),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Texture Id: ${preview.textureId}"),
-                        Text(
-                            "Preview (WxH): ${preview.width}x${preview.height}"),
-                        Text("Analysis (WxH): ${preview.analysisResolution}"),
-                        Text(
-                            "Target Rotation (unused): ${preview.targetRotation}"),
-                      ],
+                      children: [Text(preview.toString())],
                     ),
                   ),
                 );
@@ -99,20 +93,16 @@ class _ScanningScreenState extends State<ScanningScreen> {
         framerate: Framerate.fps30,
         mode: DetectionMode.continuous,
         position: CameraPosition.back,
-        appleApiMode: widget.appleApiMode,
+        api: widget.apiMode,
         onScan: (code) {
           history.addAll(code);
         },
         dispose: widget.dispose,
         children: [
-          if (_scanningOverlayConfig.enabledOverlays
-              .contains(ScanningOverlayType.materialOverlay))
+          if (enabledOverlays.contains("Material"))
             MaterialPreviewOverlay(
-              rectOfInterest:
-                  RectOfInterest.wide(), // this can be wide or square
-              onScan: (codes) {
-                // these are codes that only appear within the finder rectangle
-              },
+              rectOfInterest: RectOfInterest.wide(),
+              onScan: (codes) {},
               showSensing: true,
               onScannedBoundsColor: (codes) {
                 if (codes.isNotEmpty) {
@@ -123,8 +113,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
                 return null;
               },
             ),
-          if (_scanningOverlayConfig.enabledOverlays
-              .contains(ScanningOverlayType.codeBoundaryOverlay))
+          if (enabledOverlays.contains(("Boundary")))
             CodeBoundaryOverlay(
               codeBorderPaintBuilder: (code) {
                 return code.value.hashCode % 2 == 0 ? orangePaint : greenPaint;
@@ -134,9 +123,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
                     code.value.hashCode % 2 == 0 ? Colors.orange : Colors.green,
               ),
             ),
-          if (_scanningOverlayConfig.enabledOverlays
-              .contains(ScanningOverlayType.blurPreview))
-            const BlurPreviewOverlay()
+          if (enabledOverlays.contains("Blur")) const BlurPreviewOverlay()
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -237,7 +224,7 @@ class _ScanningScreenState extends State<ScanningScreen> {
                           children: [
                             ElevatedButton(
                               onPressed: () async {
-                                final config = cam.state.scannerConfig;
+                                final config = cam.state.value.scannerConfig;
                                 if (config != null) {
                                   // swallow errors
                                   cam.pauseCamera().catchError((_, __) {});
@@ -245,23 +232,14 @@ class _ScanningScreenState extends State<ScanningScreen> {
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => ConfigureScreen(
-                                        config,
-                                        _scanningOverlayConfig,
-                                        onOverlayConfigurationChanged:
-                                            (overlayConfig) {
-                                          setState(() {
-                                            _scanningOverlayConfig =
-                                                overlayConfig;
-                                          });
-                                        },
-                                      ),
+                                      builder: (_) => const ConfigureScreen(),
                                     ),
                                   );
 
-                                  cam.resumeCamera().catchError((error,
-                                          stack) =>
-                                      presentErrorAlert(context, error, stack));
+                                  cam.resumeCamera().catchError(
+                                        (error, stack) => presentErrorAlert(
+                                            context, error, stack),
+                                      );
                                 }
                               },
                               child: const Text('Update Configuration'),

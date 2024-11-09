@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.Surface
 import androidx.camera.core.*
 import androidx.camera.core.Camera
-import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -64,20 +63,20 @@ class Camera(
     }
 
     init {
-        val types = (args["types"] as ArrayList<String>)
+        val types = (args["types"] as Array<String>)
 
         try {
             scannerConfiguration = ScannerConfiguration(
                 types.mapNotNull { barcodeFormatMap[it] }
                     .toIntArray(),
-                DetectionMode.valueOf(args["mode"] as String),
                 Resolution.valueOf(args["res"] as String),
                 Framerate.valueOf(args["fps"] as String),
-                CameraPosition.valueOf(args["pos"] as String)
+                CameraPosition.valueOf(args["pos"] as String),
+                DetectionMode.valueOf(args["mode"] as String)
             )
 
             // Report to the user if any types are not supported
-            if (types.count() != scannerConfiguration.formats.count()) {
+            if (types.size != scannerConfiguration.types.size) {
                 val unsupportedTypes = types.filter { !barcodeFormatMap.containsKey(it) }
                 Log.d(TAG, "WARNING: Unsupported barcode types selected: $unsupportedTypes")
             }
@@ -87,14 +86,14 @@ class Camera(
         }
 
         val options = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(0, *scannerConfiguration.formats)
+            .setBarcodeFormats(0, *scannerConfiguration.types)
             .build()
 
         barcodeScanner = MLKitBarcodeScanner(options, { codes ->
             if (codes.isNotEmpty()) {
-                if (scannerConfiguration.mode == DetectionMode.pauseDetection) {
+                if (scannerConfiguration.detectionMode == DetectionMode.PauseDetection) {
                     stopDetector()
-                } else if (scannerConfiguration.mode == DetectionMode.pauseVideo) {
+                } else if (scannerConfiguration.detectionMode == DetectionMode.PauseVideo) {
                     stopCamera()
                 }
 
@@ -133,7 +132,7 @@ class Camera(
      * Separating it into a dedicated method
      * allows to load the camera at any time.
      */
-    fun loadCamera(): Task<PreviewConfiguration> {
+    fun loadCamera(): Task<CameraInformation> {
         if (ContextCompat.checkSelfPermission(
                 activity,
                 Manifest.permission.CAMERA
@@ -145,7 +144,7 @@ class Camera(
         // ProcessCameraProvider.configureInstance(Camera2Config.defaultConfig())
         val cameraProviderFuture = ProcessCameraProvider.getInstance(activity)
 
-        val loadingCompleter = TaskCompletionSource<PreviewConfiguration>()
+        val loadingCompleter = TaskCompletionSource<CameraInformation>()
         cameraProviderFuture.addListener({
             cameraProvider = cameraProviderFuture.get()
             isInitialized = true
@@ -159,7 +158,7 @@ class Camera(
     private fun buildSelectorAndUseCases() {
         cameraSelector = CameraSelector.Builder()
             .requireLensFacing(
-                if (scannerConfiguration.position == CameraPosition.back)
+                if (scannerConfiguration.position == CameraPosition.Back)
                     CameraSelector.LENS_FACING_BACK
                 else
                     CameraSelector.LENS_FACING_FRONT
@@ -256,16 +255,16 @@ class Camera(
         return camera.cameraControl.enableTorch(!torchState)
     }
 
-    fun changeConfiguration(args: HashMap<String, Any>): PreviewConfiguration {
+    fun changeConfiguration(args: HashMap<String, Any>): CameraInformation {
         if (!isInitialized)
             throw ScannerException.NotInitialized()
 
         try {
             val formats = if (args.containsKey("types")) (args["types"] as ArrayList<String>).map {
                 barcodeFormatMap[it] ?: throw ScannerException.InvalidCodeType(it)
-            }.toIntArray() else scannerConfiguration.formats
+            }.toIntArray() else scannerConfiguration.types
             val detectionMode =
-                if (args.containsKey("mode")) DetectionMode.valueOf(args["mode"] as String) else scannerConfiguration.mode
+                if (args.containsKey("mode")) DetectionMode.valueOf(args["mode"] as String) else scannerConfiguration.detectionMode
             val resolution =
                 if (args.containsKey("res")) Resolution.valueOf(args["res"] as String) else scannerConfiguration.resolution
             val framerate =
@@ -274,11 +273,11 @@ class Camera(
                 if (args.containsKey("pos")) CameraPosition.valueOf(args["pos"] as String) else scannerConfiguration.position
 
             scannerConfiguration = scannerConfiguration.copy(
-                formats = formats,
-                mode = detectionMode,
+                types = formats,
                 resolution = resolution,
                 framerate = framerate,
-                position = position
+                position = position,
+                detectionMode = detectionMode,
             )
         } catch (e: ScannerException) {
             throw e
@@ -308,19 +307,17 @@ class Camera(
         return true
     }
 
-    private fun getPreviewConfiguration(): PreviewConfiguration {
+    private fun getPreviewConfiguration(): CameraInformation {
         val previewRes =
             preview.resolutionInfo?.resolution ?: throw ScannerException.NotInitialized()
         val analysisRes =
             imageAnalysis.resolutionInfo?.resolution ?: throw ScannerException.NotInitialized()
 
-        return PreviewConfiguration(
-            flutterTextureEntry.id(),
-            0,
-            previewRes.height,
-            previewRes.width,
-            analysisWidth = analysisRes.width,
-            analysisHeight = analysisRes.height
+        return CameraInformation(
+            previewRes.width.toDouble(),
+            previewRes.height.toDouble(),
+            analysisRes.width.toDouble(),
+            analysisRes.height.toDouble()
         )
     }
 

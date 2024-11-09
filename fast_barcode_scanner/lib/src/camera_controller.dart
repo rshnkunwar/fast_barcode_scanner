@@ -7,55 +7,52 @@ import 'package:flutter/widgets.dart';
 import '../fast_barcode_scanner.dart';
 
 class ScannerState {
-  PreviewConfiguration? _previewConfig;
-  ScannerConfiguration? _scannerConfig;
-  bool _torch = false;
-  Object? _error;
+  final CameraInformation? cameraInformation;
+  final ScannerConfiguration? scannerConfig;
+  final bool torch;
+  final Error? error;
 
-  PreviewConfiguration? get previewConfig => _previewConfig;
+  bool get isInitialized => scannerConfig != null && cameraInformation != null;
 
-  ScannerConfiguration? get scannerConfig => _scannerConfig;
+  const ScannerState.uninitialized()
+      : cameraInformation = null,
+        scannerConfig = null,
+        torch = false,
+        error = null;
 
-  bool get torchState => _torch;
+  ScannerState(
+    this.cameraInformation,
+    this.scannerConfig,
+    this.torch,
+    this.error,
+  );
 
-  bool get isInitialized => _previewConfig != null;
+  ScannerState withTorch(bool active) {
+    return ScannerState(cameraInformation, scannerConfig, active, error);
+  }
 
-  Object? get error => _error;
+  ScannerState withError(Error error) {
+    return ScannerState(null, null, torch, error);
+  }
 }
 
-/// This class facilitates the communication with the platform interface.
-/// It is purely for convinience. You can always use the
-/// `FastBarcodeScannerPlatform` or `MethodChannelFastBarcodeScanner` yourself.
-///
+/// This class is purely for convinience. You can use `MethodChannelFastBarcodeScanner`
+/// or even `FastBarcodeScannerPlatform` directly, if you so wish.
 class CameraController {
   CameraController._internal() : super();
-
   static final shared = CameraController._internal();
-
-  // factory CameraController() => shared;
 
   StreamSubscription? _scanSilencerSubscription;
 
-  final FastBarcodeScannerPlatform _platform =
-      FastBarcodeScannerPlatform.instance;
+  final _platform = FastBarcodeScannerPlatform.instance;
 
-  final state = ScannerState();
-
-  final events = ValueNotifier(ScannerEvent.uninitialized);
-
-  static const scannedCodeTimeout = Duration(milliseconds: 250);
   DateTime? _lastScanTime;
 
-  ValueNotifier<List<Barcode>> scannedBarcodes = ValueNotifier([]);
+  final state = ValueNotifier(const ScannerState.uninitialized());
+  final resultNotifier = ValueNotifier(List<Barcode>.empty());
+  final eventNotifier = ValueNotifier(ScannerEvent.uninitialized);
 
-  Size? get analysisSize {
-    final previewConfig = state.previewConfig;
-    if (previewConfig != null) {
-      return Size(previewConfig.analysisWidth.toDouble(),
-          previewConfig.analysisHeight.toDouble());
-    }
-    return null;
-  }
+  static const scannedCodeTimeout = Duration(milliseconds: 250);
 
   /// Indicates if the torch is currently switching.
   ///
@@ -71,11 +68,11 @@ class CameraController {
   OnDetectionHandler? _onScan;
 
   /// Curried function for [_onScan]. This ensures that each scan receipt is done
-  /// consistently. We log [_lastScanTime] and update the [scannedBarcodes] ValueNotifier
+  /// consistently. We log [_lastScanTime] and update the [resultNotifier] ValueNotifier
   OnDetectionHandler _buildScanHandler(OnDetectionHandler? onScan) {
     return (barcodes) {
       _lastScanTime = DateTime.now();
-      scannedBarcodes.value = barcodes;
+      resultNotifier.value = barcodes;
       onScan?.call(barcodes);
     };
   }
@@ -86,17 +83,17 @@ class CameraController {
     required Framerate framerate,
     required CameraPosition position,
     required DetectionMode detectionMode,
-    ApiMode? apiMode,
+    required ApiOptions api,
     OnDetectionHandler? onScan,
   }) async {
     try {
-      state._previewConfig = await _platform.init(
+      final cameraInfo = await _platform.init(
         types,
         resolution,
         framerate,
         detectionMode,
         position,
-        apiMode: apiMode,
+        api,
       );
 
       _onScan = _buildScanHandler(onScan);
@@ -106,21 +103,21 @@ class CameraController {
         if (scanTime != null &&
             DateTime.now().difference(scanTime) > scannedCodeTimeout) {
           // it's been too long since we've seen a scanned code, clear the list
-          scannedBarcodes.value = const <Barcode>[];
+          resultNotifier.value = const <Barcode>[];
         }
       });
 
       _platform.setOnDetectHandler(_onDetectHandler);
 
-      state._scannerConfig = ScannerConfiguration(
+      final scanner = ScannerConfiguration(
           types, resolution, framerate, position, detectionMode);
 
-      state._error = null;
-
-      events.value = ScannerEvent.resumed;
+      state.value = ScannerState(cameraInfo, scanner, false, null);
+      eventNotifier.value = ScannerEvent.resumed;
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -128,15 +125,13 @@ class CameraController {
   Future<void> dispose() async {
     try {
       await _platform.dispose();
-      state._scannerConfig = null;
-      state._previewConfig = null;
-      state._torch = false;
-      state._error = null;
-      events.value = ScannerEvent.uninitialized;
+      state.value = const ScannerState.uninitialized();
+      eventNotifier.value = ScannerEvent.uninitialized;
       _scanSilencerSubscription?.cancel();
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -144,10 +139,11 @@ class CameraController {
   Future<void> pauseCamera() async {
     try {
       await _platform.stop();
-      events.value = ScannerEvent.paused;
+      eventNotifier.value = ScannerEvent.paused;
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -155,10 +151,11 @@ class CameraController {
   Future<void> resumeCamera() async {
     try {
       await _platform.start();
-      events.value = ScannerEvent.resumed;
+      eventNotifier.value = ScannerEvent.resumed;
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -166,9 +163,10 @@ class CameraController {
   Future<void> pauseScanner() async {
     try {
       await _platform.stopDetector();
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -176,9 +174,10 @@ class CameraController {
   Future<void> resumeScanner() async {
     try {
       await _platform.startDetector();
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
       rethrow;
     }
   }
@@ -188,17 +187,18 @@ class CameraController {
       _togglingTorch = true;
 
       try {
-        state._torch = await _platform.toggleTorch();
+        state.value = state.value.withTorch(await _platform.toggleTorch());
+      } on Error catch (error) {
+        state.value = state.value.withError(error);
+        eventNotifier.value = ScannerEvent.error;
       } catch (error) {
-        state._error = error;
-        events.value = ScannerEvent.error;
         rethrow;
       }
 
       _togglingTorch = false;
     }
 
-    return state._torch;
+    return state.value.torch;
   }
 
   Future<void> configure({
@@ -209,68 +209,61 @@ class CameraController {
     CameraPosition? position,
     OnDetectionHandler? onScan,
   }) async {
-    if (state.isInitialized && !_configuring) {
-      final scannerConfig = state._scannerConfig!;
-      _configuring = true;
+    if (!state.value.isInitialized || _configuring) return;
 
-      try {
-        state._previewConfig = await _platform.changeConfiguration(
-          types: types,
-          resolution: resolution,
-          framerate: framerate,
-          detectionMode: detectionMode,
-          position: position,
-        );
+    _configuring = true;
 
-        state._scannerConfig = scannerConfig.copyWith(
-          types: types,
-          resolution: resolution,
-          framerate: framerate,
-          detectionMode: detectionMode,
-          position: position,
-        );
+    final scannerConfig = state.value.scannerConfig!;
 
-        _onScan = _buildScanHandler(onScan);
-      } catch (error) {
-        state._error = error;
-        events.value = ScannerEvent.error;
-        rethrow;
-      }
+    try {
+      final preview = await _platform.changeConfiguration(
+        types: types,
+        resolution: resolution,
+        framerate: framerate,
+        detectionMode: detectionMode,
+        position: position,
+      );
 
-      _configuring = false;
+      final scanner = scannerConfig.copyWith(
+        types: types,
+        resolution: resolution,
+        framerate: framerate,
+        detectionMode: detectionMode,
+        position: position,
+      );
+
+      _onScan = _buildScanHandler(onScan);
+
+      state.value = ScannerState(preview, scanner, state.value.torch, null);
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
+    } catch (error) {
+      rethrow;
     }
+
+    _configuring = false;
   }
 
   Future<List<Barcode>?> scanImage(ImageSource source) async {
     try {
       return _platform.scanImage(source);
     } catch (error) {
-      state._error = error;
-      events.value = ScannerEvent.error;
-      rethrow;
+      return null;
     }
   }
 
   void _onDetectHandler(List<Barcode> codes) {
-    events.value = ScannerEvent.detected;
+    eventNotifier.value = ScannerEvent.detected;
     _onScan?.call(codes);
   }
 }
 
-class ScannedBarcodes {
+sealed class ScanResult {
   final List<Barcode> barcodes;
   final DateTime timestamp;
 
-  ScannedBarcodes(this.barcodes) : timestamp = DateTime.now();
+  ScanResult(this.barcodes) : timestamp = DateTime.now();
 
-  ScannedBarcodes.none() : this([]);
-
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ScannedBarcodes &&
-          runtimeType == other.runtimeType &&
-          barcodes == other.barcodes &&
-          timestamp == other.timestamp;
-
-  int get hashCode => barcodes.hashCode ^ timestamp.hashCode;
+  ScanResult.none() : this([]);
 }

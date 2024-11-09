@@ -2,7 +2,7 @@ import AVFoundation
 import Flutter
 import Vision
 
-typealias VisionBarcodeCornerPointConverter = (VNBarcodeObservation) -> CGRect?
+typealias VisionBarcodeCornerPointConverter = @MainActor (VNBarcodeObservation) -> CGRect?
 
 class VisionBarcodeScanner: NSObject, BarcodeScanner, AVCaptureVideoDataOutputSampleBufferDelegate {
   var resultHandler: ResultHandler
@@ -92,7 +92,8 @@ class VisionBarcodeScanner: NSObject, BarcodeScanner, AVCaptureVideoDataOutputSa
   }
 
   // MARK: Vision capture output
-
+    
+  @MainActor
   func captureOutput(
     _ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer,
     from connection: AVCaptureConnection
@@ -107,23 +108,23 @@ class VisionBarcodeScanner: NSObject, BarcodeScanner, AVCaptureVideoDataOutputSa
   }
 
   // MARK: Still image processing
-
-  func process(_ cgImage: CGImage) {
+    func process(_ cgImage: CGImage) throws {
     do {
       try visionSequenceHandler.perform(visionBarcodesRequests, on: cgImage)
     } catch {
-      handleVisionRequestUpdate(request: nil, error: error)
+        print("Error scanning image: \(error)")
+        throw ScannerError.analysisFailed(error)
     }
   }
 
   // MARK: Callback
-
+  @MainActor
   private func handleVisionRequestUpdate(request: VNRequest?, error: Error?) {
     guard let results = request?.results as? [VNBarcodeObservation] else {
       let message = error != nil ? "\(error!)" : "unknownError"
       print("Error scanning image: \(message)")
       let flutterError = FlutterError(
-        code: "UNEXPECTED_SCAN_ERROR", message: message, details: error?._code)
+        code: "UNEXPECTED_SCAN_ERROR", message: message, details: nil)
       resultHandler(flutterError)
       return
     }

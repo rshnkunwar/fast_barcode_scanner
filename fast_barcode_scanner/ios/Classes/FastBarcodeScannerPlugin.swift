@@ -1,7 +1,9 @@
 import AVFoundation
+import VisionKit
 import Flutter
 
 public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
+
   let commandChannel: FlutterMethodChannel
   let barcodeEventChannel: FlutterEventChannel
   let factory: PreviewViewFactory
@@ -48,13 +50,13 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
         var response: Any?
 
         switch call.method {
-        case "init": response = try initialize(args: call.arguments).dict
+        case "init": response = try await initialize(args: call.arguments).serialized
         case "start": try await start()
-        case "stop": try stop()
-        case "startDetector": try startDetector()
-        case "stopDetector": try stopDetector()
+        case "stop": try await stop()
+        case "startScanner": try startScanner()
+        case "stopScanner": try stopScanner()
         case "torch": response = try toggleTorch()
-        case "config": response = try updateConfiguration(call: call).dict
+        case "config": response = try updateConfiguration(call: call).serialized
         case "scan": response = try await analyzeImage(args: call.arguments)
         case "dispose": dispose()
         default: response = FlutterMethodNotImplemented
@@ -62,13 +64,13 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
 
         result(response)
       } catch {
-        print(error)
+        print(call.method, error)
         result(error.flutterError)
       }
     }
   }
 
-  func initialize(args: Any?) throws -> PreviewConfiguration {
+  func initialize(args: Any?) async throws -> CameraInformation {
     guard camera == nil else {
       throw ScannerError.alreadyInitialized
     }
@@ -78,66 +80,65 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     }
 
     let scanner: BarcodeScanner
-    switch cameraConfiguration.apiMode {
+    switch cameraConfiguration.apiOptions {
     case .avFoundation:
       scanner = AVFoundationBarcodeScanner { [unowned self] barcodes in
-        DispatchQueue.main.sync {
-          self.factory.preview?.videoPreviewLayer.transformedMetadataObject(for: barcodes)
-        }
+        self.factory.preview?.videoPreviewLayer.transformedMetadataObject(for: barcodes)
       } resultHandler: { [unowned self] barcodes in
         self.detectionsSink?(barcodes)
       }
-    case .vision:
-      scanner = VisionBarcodeScanner(confidence: cameraConfiguration.confidence) { observation in
+    case .vision(let confidence):
+      scanner = VisionBarcodeScanner(confidence: confidence) { observation in
         self.factory.preview?.videoPreviewLayer.layerRectConverted(
           fromMetadataOutputRect: observation.boundingBox)
       } resultHandler: { [unowned self] result in
-        detectionsSink?(result)
+        self.detectionsSink?(result)
       }
     }
 
-    let camera = try Camera(configuration: cameraConfiguration, scanner: scanner)
+    let camera = try await Camera(configuration: cameraConfiguration, scanner: scanner)
 
     factory.session = camera.session
 
-    try camera.start()
+    try await camera.start()
 
     self.camera = camera
 
-    return camera.previewConfiguration
+    return camera.cameraInformation
   }
 
   func start() async throws {
     guard let camera = camera else {
       throw ScannerError.notInitialized
     }
-    try camera.start()
+    try await camera.start()
   }
 
-  func stop() throws {
+  func stop() async throws {
     guard let camera = camera else {
       throw ScannerError.notInitialized
     }
-    camera.stop()
+    await camera.stop()
   }
 
   func dispose() {
-    camera?.stop()
-    camera = nil
+      if !(camera?.session.isRunning ?? false) {
+          camera = nil
+      }
   }
 
-  func startDetector() throws {
+  func startScanner() throws {
     guard let camera = camera else {
       throw ScannerError.notInitialized
     }
-    camera.startDetector()
+    camera.startScanner()
   }
 
-  func stopDetector() throws {
+  func stopScanner() throws {
     guard let camera = camera else {
       throw ScannerError.notInitialized
     }
-    camera.stopDetector()
+    camera.stopScanner()
   }
 
   func toggleTorch() throws -> Bool {
@@ -147,18 +148,18 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     return try camera.toggleTorch()
   }
 
-  func updateConfiguration(call: FlutterMethodCall) throws -> PreviewConfiguration {
+  func updateConfiguration(call: FlutterMethodCall) throws -> CameraInformation {
     guard let camera = camera else {
       throw ScannerError.notInitialized
     }
 
-    guard let config = camera.cameraConfiguration.copy(with: call.arguments) else {
+    guard let config = camera.targetConfiguration.copy(with: call.arguments) else {
       throw ScannerError.invalidArguments(call.arguments)
     }
 
     try camera.configureSession(configuration: config)
 
-    return camera.previewConfiguration
+    return camera.cameraInformation
   }
 
   func analyzeImage(args: Any?) async throws -> Any? {
@@ -192,12 +193,23 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     else {
       throw ScannerError.loadingDataFailed
     }
-
-    return await withCheckedContinuation { continuation in
-      let scanner = VisionBarcodeScanner(confidence: 0.6, resultHandler: continuation.resume)
-      scanner.process(cgImage)
+    
+    return try await withCheckedThrowingContinuation { (continuation) in
+        do {
+            let scanner = VisionBarcodeScanner(confidence: 0.6, resultHandler: continuation.resume)
+            try scanner.process(cgImage)
+        } catch {
+            continuation.resume(throwing: error)
+        }
     }
   }
+    
+    @MainActor @available(iOS 16.0, *)
+    func nativeScanner(args: Any?) {
+        let nativeScanner = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.ean8, .ean13, .code128])], qualityLevel: .balanced, recognizesMultipleItems: true, isHighFrameRateTrackingEnabled: true, isPinchToZoomEnabled: true, isGuidanceEnabled: true, isHighlightingEnabled: true)
+        
+        
+    }
 
   public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)
     -> FlutterError?
@@ -211,3 +223,5 @@ public class FastBarcodeScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHan
     return nil
   }
 }
+
+

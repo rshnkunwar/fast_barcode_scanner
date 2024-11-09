@@ -9,16 +9,14 @@ struct CameraConfiguration {
     resolution: Resolution,
     mode: DetectionMode,
     codes: [String],
-    apiMode: ApiMode = ApiMode.avFoundation,
-    confidence: Float = 0.6
+    apiOptions: ApiOptions
   ) {
     self.position = position
     self.framerate = framerate
     self.resolution = resolution
     detectionMode = mode
     self.codes = codes
-    self.apiMode = apiMode
-    self.confidence = confidence
+    self.apiOptions = apiOptions
   }
 
   init?(_ args: Any?) {
@@ -29,13 +27,25 @@ struct CameraConfiguration {
       let framerate = Framerate(rawValue: dict["fps"] as? String ?? ""),
       let detectionMode = DetectionMode(rawValue: dict["mode"] as? String ?? ""),
       let codes = dict["types"] as? [String],
-      let apiMode = ApiMode(rawValue: dict["apiMode"] as? String ?? "")
+      let api = dict["api"] as? String,
+      let options = dict["options"] as? [String: Any]
     else {
       return nil
     }
 
-    // TODO: Make confidence configurable as part of the chosen scanner
-    let confidence = dict["confidence"] as? Float ?? 0.6
+    let apiOptions: ApiOptions
+    switch api {
+    case "avfoundation":
+      apiOptions = .avFoundation
+    case "vision":
+      guard let confidence = options["confidence"] as? Float else {
+        return nil
+      }
+
+      apiOptions = .vision(confidence: confidence)
+    default:
+      return nil
+    }
 
     self.init(
       position: position,
@@ -43,8 +53,7 @@ struct CameraConfiguration {
       resolution: resolution,
       mode: detectionMode,
       codes: codes,
-      apiMode: apiMode,
-      confidence: confidence
+      apiOptions: apiOptions
     )
   }
 
@@ -53,12 +62,27 @@ struct CameraConfiguration {
   let resolution: Resolution
   let detectionMode: DetectionMode
   let codes: [String]
-  let apiMode: ApiMode
-  let confidence: Float
+  let apiOptions: ApiOptions
 
   func copy(with args: Any?) -> CameraConfiguration? {
     guard let dict = args as? [String: Any] else {
       return nil
+    }
+
+    var apiOptions: ApiOptions? = nil
+    if let api = dict["api"] as? String, let options = dict["options"] as? [String: Any] {
+      switch api {
+      case "avfoundation":
+        apiOptions = .avFoundation
+      case "vision":
+        guard let confidence = options["confidence"] as? Float else {
+          return nil
+        }
+
+        apiOptions = .vision(confidence: confidence)
+      default:
+        return nil
+      }
     }
 
     return CameraConfiguration.init(
@@ -67,8 +91,7 @@ struct CameraConfiguration {
       resolution: Resolution(rawValue: dict["res"] as? String ?? "") ?? resolution,
       mode: DetectionMode(rawValue: dict["mode"] as? String ?? "") ?? detectionMode,
       codes: dict["types"] as? [String] ?? codes,
-      apiMode: ApiMode(rawValue: dict["apiMode"] as? String ?? "") ?? apiMode,
-      confidence: dict["confidence"] as? Float ?? confidence
+      apiOptions: apiOptions ?? self.apiOptions
     )
   }
 }
@@ -151,6 +174,7 @@ enum DetectionMode: String {
   case pauseDetection, pauseVideo, continuous
 }
 
-enum ApiMode: String {
-  case avFoundation, vision
+enum ApiOptions {
+  case avFoundation
+  case vision(confidence: Float)
 }

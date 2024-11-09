@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Dispose:'),
+                const Text('Dispose CameraController with BarcodeCamera'),
                 Checkbox(
                   value: _disposeCheckboxValue,
                   onChanged: (newValue) => setState(

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'fast_barcode_scanner_platform_interface.dart';
 import 'types/barcode.dart';
 import 'types/barcode_type.dart';
-import 'types/preview_configuration.dart';
+import 'types/camera_information.dart';
 
 class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   static const MethodChannel _channel =
@@ -21,23 +21,23 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   OnDetectionHandler? _onDetectHandler;
 
   @override
-  Future<PreviewConfiguration> init(
+  Future<CameraInformation> init(
     List<BarcodeType> types,
     Resolution resolution,
     Framerate framerate,
     DetectionMode detectionMode,
-    CameraPosition position, {
-    ApiMode? apiMode,
-  }) async {
+    CameraPosition position,
+    ApiOptions api,
+  ) async {
     final response = await _channel.invokeMethod('init', {
       'types': types.map((e) => e.name).toList(growable: false),
-      'mode': detectionMode.name,
       'res': resolution.name,
       'fps': framerate.name,
       'pos': position.name,
-      ...apiMode?.configMap ?? {},
+      'mode': detectionMode.name,
+      ...api.map
     });
-    return PreviewConfiguration(response);
+    return CameraInformation(response);
   }
 
   @override
@@ -72,7 +72,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
       _channel.invokeMethod('torch').then((isOn) => isOn);
 
   @override
-  Future<PreviewConfiguration> changeConfiguration({
+  Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
     Resolution? resolution,
     Framerate? framerate,
@@ -86,7 +86,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
       if (framerate != null) 'fps': framerate.name,
       if (position != null) 'pos': position.name,
     });
-    return PreviewConfiguration(response);
+    return CameraInformation(response);
   }
 
   @override

@@ -5,41 +5,34 @@ class Camera: NSObject {
   // MARK: Session Management
 
   let session = AVCaptureSession()
-  private let sessionQueue = DispatchQueue(label: "fast_barcode_scanner.session.serial")
+    private let sessionQueue = DispatchQueue(label: "fast_barcode_scanner.session.serial")
   private var deviceInput: AVCaptureDeviceInput!
   private var captureDevice: AVCaptureDevice { deviceInput.device }
   private var scanner: BarcodeScanner
 
-  private(set) var cameraConfiguration: CameraConfiguration
-  private(set) var previewConfiguration: PreviewConfiguration!
+  private(set) var targetConfiguration: CameraConfiguration
+  private(set) var cameraInformation: CameraInformation!
 
   private var wasUsingTorch = false
-
-  init(configuration: CameraConfiguration, scanner: BarcodeScanner) throws {
+    
+  init(configuration: CameraConfiguration, scanner: BarcodeScanner) async throws {
     self.scanner = scanner
-    self.cameraConfiguration = configuration
+    self.targetConfiguration = configuration
     super.init()
 
-    var authorizationGranted = true
+    let authorizationGranted: Bool
     switch AVCaptureDevice.authorizationStatus(for: .video) {
-    case .authorized: break
-    case .notDetermined:
-      sessionQueue.suspend()
-      AVCaptureDevice.requestAccess(for: .video) { granted in
-        authorizationGranted = granted
-        self.sessionQueue.resume()
-      }
+    case .authorized:
+      authorizationGranted = true
     default:
-      authorizationGranted = false
+        authorizationGranted = await AVCaptureDevice.requestAccess(for: .video)
     }
 
-    try sessionQueue.sync {
-      if authorizationGranted {
-        try self.configureSession(configuration: configuration)
-        self.addObservers()
-      } else {
-        throw ScannerError.unauthorized
-      }
+    if authorizationGranted {
+      try self.configureSession(configuration: configuration)
+      self.addObservers()
+    } else {
+      throw ScannerError.unauthorized
     }
   }
 
@@ -47,7 +40,7 @@ class Camera: NSObject {
     removeObservers()
   }
 
-  func configureSession(configuration: CameraConfiguration) throws {
+  func configureSession(configuration: CameraConfiguration)  throws {
     let requestedDevice: AVCaptureDevice?
 
     // Grab the requested camera device, otherwise toggle the position and try again.
@@ -93,7 +86,7 @@ class Camera: NSObject {
       case .pauseDetection:
         self.scanner.stop()
       case .pauseVideo:
-        self.stop()
+          Task { await self.stop() }
       case .continuous: break
       }
     }
@@ -126,38 +119,46 @@ class Camera: NSObject {
       throw ScannerError.configurationError(error.localizedDescription)
     }
 
-    let previewSize = CMVideoFormatDescriptionGetDimensions(
-      captureDevice.activeFormat.formatDescription)
+    self.targetConfiguration = configuration
 
-    self.cameraConfiguration = configuration
+    let videoSize = CMVideoFormatDescriptionGetDimensions(
+      captureDevice.activeFormat.formatDescription
+    )
 
-    self.previewConfiguration = PreviewConfiguration(
-      previewWidth: previewSize.width, previewHeight: previewSize.height,
-      analysisWidth: previewSize.width, analysisHeight: previewSize.height)
+    self.cameraInformation = CameraInformation(
+      videoWidth: videoSize.width, videoHeight: videoSize.height,
+      analysisWidth: videoSize.width, analysisHeight: videoSize.height
+    )
   }
 
-  func start() throws {
+  func start() async throws {
     guard !session.isRunning else {
       return
     }
 
     scanner.start()
-
-    self.session.startRunning()
+      
+      let task = Task {
+          self.session.startRunning()
+      }
+      await task.value
 
     if wasUsingTorch {
       try toggleTorch()
     }
   }
 
-  func stop() {
+  func stop() async {
     guard session.isRunning else {
       return
     }
 
     wasUsingTorch = captureDevice.isTorchActive
-
-    session.stopRunning()
+      
+      let task = Task {
+          self.session.stopRunning()
+      }
+      await task.value
   }
 
   @discardableResult
@@ -171,11 +172,11 @@ class Camera: NSObject {
     return captureDevice.torchMode == .on
   }
 
-  func startDetector() {
+  func startScanner() {
     scanner.start()
   }
 
-  func stopDetector() {
+  func stopScanner() {
     scanner.stop()
   }
 

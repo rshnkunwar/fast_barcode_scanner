@@ -4,7 +4,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'method_channel_fast_barcode_scanner.dart';
 import 'types/barcode.dart';
 import 'types/barcode_type.dart';
-import 'types/preview_configuration.dart';
+import 'types/camera_information.dart';
 
 /// Callback handler method for receiving scanned codes.
 typedef OnDetectionHandler = void Function(List<Barcode>);
@@ -36,14 +36,15 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   }
 
   /// Initializes and starts the native camera interface.
-  /// Returns a [PreviewConfiguration] the camera is setup with.
-  Future<PreviewConfiguration> init(
-      List<BarcodeType> types,
-      Resolution resolution,
-      Framerate framerate,
-      DetectionMode detectionMode,
-      CameraPosition position,
-      {ApiMode? apiMode}) {
+  /// Returns a [CameraInformation] the camera is setup with.
+  Future<CameraInformation> init(
+    List<BarcodeType> types,
+    Resolution resolution,
+    Framerate framerate,
+    DetectionMode detectionMode,
+    CameraPosition position,
+    ApiOptions api,
+  ) {
     throw UnimplementedError('init() has not been implemented');
   }
 
@@ -79,7 +80,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
 
   /// Changes the supplied camera settings.
   /// Nil values are ignored and stay unchanged.
-  Future<PreviewConfiguration> changeConfiguration({
+  Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
     Resolution? resolution,
     Framerate? framerate,

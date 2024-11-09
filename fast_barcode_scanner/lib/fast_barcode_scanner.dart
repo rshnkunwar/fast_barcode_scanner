@@ -13,8 +13,8 @@ export 'package:fast_barcode_scanner_platform_interface/fast_barcode_scanner_pla
         Resolution,
         DetectionMode,
         CameraPosition,
-        PreviewConfiguration,
-        AppleApiMode;
+        CameraInformation,
+        ApiOptions;
 
 export 'src/overlays/code_boundary_overlay/code_boundary_overlay.dart';
 export 'src/overlays/overlays.dart';

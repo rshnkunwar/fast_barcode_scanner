@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 typedef CodeBorderPaintBuilder = Paint Function(Barcode);
 
+/// Draws a boundary around detected `Barcode`s.
 class CodeBoundaryOverlay extends StatefulWidget {
   final Paint Function(Barcode)? codeBorderPaintBuilder;
   final TextStyle Function(Barcode)? barcodeValueStyle;
@@ -24,17 +25,18 @@ class _CodeBoundaryOverlayState extends State<CodeBoundaryOverlay> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<List<Barcode>>(
-      valueListenable: _cameraController.scannedBarcodes,
+      valueListenable: _cameraController.resultNotifier,
       builder: (context, barcodes, child) {
-        final analysisSize = _cameraController.analysisSize;
+        final previewSize =
+            _cameraController.state.value.cameraInformation?.videoSize;
 
-        if (analysisSize == null || barcodes.isEmpty) {
-          return ColoredBox(color: Colors.black);
+        if (previewSize == null || barcodes.isEmpty) {
+          return const SizedBox();
         }
 
         return CustomPaint(
           painter: CodeBorderPainter(
-            imageSize: analysisSize,
+            imageSize: previewSize,
             barcodes: barcodes,
             barcodePaintSelector: widget.codeBorderPaintBuilder,
             barcodeValueStyle: widget.barcodeValueStyle,

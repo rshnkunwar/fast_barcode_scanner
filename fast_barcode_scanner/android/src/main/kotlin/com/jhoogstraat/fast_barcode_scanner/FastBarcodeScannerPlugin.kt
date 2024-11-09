@@ -3,6 +3,7 @@ package com.jhoogstraat.fast_barcode_scanner
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.net.Uri
@@ -16,7 +17,7 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-import com.jhoogstraat.fast_barcode_scanner.types.PreviewConfiguration
+import com.jhoogstraat.fast_barcode_scanner.types.CameraInformation
 import com.jhoogstraat.fast_barcode_scanner.types.ScannerException
 import com.jhoogstraat.fast_barcode_scanner.types.barcodeStringMap
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -98,7 +99,6 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
     }
 
     /* Command MethodChannel */
-    @Suppress("UNCHECKED_CAST")
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         try {
             var response: Any? = null
@@ -106,8 +106,8 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
             when (call.method) {
                 "init" -> {
                     initialize(call.arguments as HashMap<String, Any>)
-                        .addOnSuccessListener { result.success(it.toMap()) }
-                        .addOnFailureListener { throw it }
+                        .addOnSuccessListener { result.success(it.serialized()) }
+                        .addOnFailureListener { (it as ScannerException).throwFlutterError(result) }
                     return
                 }
                 "scan" -> {
@@ -115,10 +115,7 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
                         .addOnSuccessListener { barcodes ->
                             result.success(barcodes?.map { encode(listOf(it)) })
                         }
-                        .addOnFailureListener {
-                            throw ScannerException.AnalysisFailed(it)
-                        }
-                    return
+                        .addOnFailureListener { (it as ScannerException).throwFlutterError(result) }
                 }
                 else -> {
                     val camera = this.camera ?: throw ScannerException.NotInitialized()
@@ -129,7 +126,7 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
                         "stopDetector" -> camera.stopDetector()
                         "config" -> response =
                             camera.changeConfiguration(call.arguments as HashMap<String, Any>)
-                                .toMap()
+                                .serialized()
                         "torch" -> {
                             camera.toggleTorch()
                                 .addListener(
@@ -170,7 +167,7 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
     }
 
     @SuppressLint("UnsafeOptInUsageError")
-    private fun initialize(configuration: HashMap<String, Any>): Task<PreviewConfiguration> {
+    private fun initialize(configuration: HashMap<String, Any>): Task<CameraInformation> {
         if (this.camera != null)
             throw ScannerException.AlreadyInitialized()
 
@@ -211,16 +208,23 @@ class FastBarcodeScannerPlugin : FlutterPlugin, MethodCallHandler, StreamHandler
 
         return when (source) {
             // Binary
-            is List<*> -> scanner.process(
-                InputImage.fromBitmap(
-                    BitmapFactory.decodeByteArray(
-                        source[0] as ByteArray,
-                        0,
-                        (source[0] as ByteArray).size
-                    ),
-                    source[1] as Int
+            is List<*> -> {
+                val options = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.HARDWARE }
+                val bitmap = BitmapFactory.decodeByteArray(
+                    source[0] as ByteArray,
+                    0,
+                    (source[0] as ByteArray).size,
+                    options
                 )
-            )
+                if (bitmap == null) {
+                    throw ScannerException.InvalidImageData()
+                }
+
+                scanner.process(
+                    InputImage.fromBitmap(bitmap, 0)
+                )
+            }
+
             // Picker
             else -> {
                 if (pickImageCompleter?.task?.isComplete == false)

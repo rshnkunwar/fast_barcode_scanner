@@ -35,10 +35,11 @@ class MaterialPreviewOverlay extends StatefulWidget {
 
   @override
   State createState() {
-    if (!showSensing)
+    if (!showSensing) {
       return StaticMaterialPreviewOverlayState();
-    else
+    } else {
       return MaterialPreviewOverlayState();
+    }
   }
 }
 
@@ -48,13 +49,13 @@ class StaticMaterialPreviewOverlayState extends State<MaterialPreviewOverlay> {
   @override
   void initState() {
     super.initState();
-    CameraController.shared.scannedBarcodes.addListener(_onBarcodesDetected);
+    CameraController.shared.resultNotifier.addListener(_onBarcodesDetected);
   }
 
   @override
   void dispose() {
     super.dispose();
-    CameraController.shared.scannedBarcodes.removeListener(_onBarcodesDetected);
+    CameraController.shared.resultNotifier.removeListener(_onBarcodesDetected);
   }
 
   @override
@@ -86,12 +87,14 @@ class StaticMaterialPreviewOverlayState extends State<MaterialPreviewOverlay> {
   }
 
   void _onBarcodesDetected() {
-    final analysisSize = CameraController.shared.analysisSize;
+    // TODO: Get analysis size from native side.
+    // final analysisSize = CameraController.shared.analysisSize;
+    const analysisSize = null;
     final previewSize = context.size;
 
     setState(() {
       if (analysisSize != null && previewSize != null) {
-        _filteredBarcodes = CameraController.shared.scannedBarcodes.value
+        _filteredBarcodes = CameraController.shared.resultNotifier.value
             .where(widget.rectOfInterest.buildCodeFilter(
               analysisSize: analysisSize,
               previewSize: previewSize,
@@ -158,23 +161,25 @@ class MaterialPreviewOverlayState extends State<MaterialPreviewOverlay>
 
     _controller.forward();
 
-    CameraController.shared.scannedBarcodes.addListener(_onCodesScanned);
+    CameraController.shared.resultNotifier.addListener(_onCodesScanned);
   }
 
   @override
   void dispose() {
-    CameraController.shared.scannedBarcodes.removeListener(_onCodesScanned);
+    CameraController.shared.resultNotifier.removeListener(_onCodesScanned);
     _controller.dispose();
     super.dispose();
   }
 
   void _onCodesScanned() {
-    final analysisSize = CameraController.shared.analysisSize;
+    // TODO: Get analysis size from native side.
+    // final analysisSize = CameraController.shared.analysisSize;
+    const analysisSize = null;
     final previewSize = context.size;
 
     setState(() {
       if (analysisSize != null && previewSize != null) {
-        _filteredCodes = CameraController.shared.scannedBarcodes.value
+        _filteredCodes = CameraController.shared.resultNotifier.value
             .where(widget.rectOfInterest.buildCodeFilter(
               analysisSize: analysisSize,
               previewSize: previewSize,

@@ -20,7 +20,7 @@ class BlurPreviewOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: CameraController.shared.events,
+      valueListenable: CameraController.shared.eventNotifier,
       builder: (context, event, child) {
         return TweenAnimationBuilder(
           tween: Tween(begin: 0.0, end: shouldBlur(event) ? blurAmount : 0.0),

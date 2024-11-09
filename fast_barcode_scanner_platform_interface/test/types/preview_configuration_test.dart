@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('Should initialize all class members from list', () {
-    final config1 = PreviewConfiguration({
+    final config1 = CameraInformation({
       "textureId": 1,
       "targetRotation": 2,
       "height": 3,
@@ -12,7 +12,7 @@ void main() {
       "analysisHeight": 7,
     });
 
-    final config2 = PreviewConfiguration({
+    final config2 = CameraInformation({
       "textureId": 7,
       "targetRotation": 6,
       "height": 5,
@@ -25,7 +25,6 @@ void main() {
     const expected2 = [7, 6, 5, 4, "3", 2, 1];
 
     expect([
-      config1.textureId,
       config1.targetRotation,
       config1.height,
       config1.width,
@@ -35,7 +34,6 @@ void main() {
     ], expected1);
 
     expect([
-      config2.textureId,
       config2.targetRotation,
       config2.height,
       config2.width,
@@ -46,13 +44,13 @@ void main() {
   });
 
   test("Should throw A TypeError if invalid map is provided", () {
-    expect(() => PreviewConfiguration({}), throwsA(isA<TypeError>()));
-    expect(() => PreviewConfiguration({"textureId": "1"}),
-        throwsA(isA<TypeError>()));
+    expect(() => CameraInformation({}), throwsA(isA<TypeError>()));
+    expect(
+        () => CameraInformation({"textureId": "1"}), throwsA(isA<TypeError>()));
   });
 
   test('Should be value-equatable', () {
-    final config1 = PreviewConfiguration({
+    final config1 = CameraInformation({
       "textureId": 1,
       "targetRotation": 2,
       "height": 3,
@@ -61,7 +59,7 @@ void main() {
       "analysisHeight": 7,
     });
 
-    final config2 = PreviewConfiguration({
+    final config2 = CameraInformation({
       "textureId": 5,
       "targetRotation": 4,
       "height": 3,
@@ -70,7 +68,7 @@ void main() {
       "analysisHeight": -1,
     });
 
-    final config1Copy = PreviewConfiguration({
+    final config1Copy = CameraInformation({
       "textureId": 1,
       "targetRotation": 2,
       "height": 3,
@@ -79,7 +77,7 @@ void main() {
       "analysisHeight": 7,
     });
 
-    final config2Copy = PreviewConfiguration({
+    final config2Copy = CameraInformation({
       "textureId": 5,
       "targetRotation": 4,
       "height": 3,

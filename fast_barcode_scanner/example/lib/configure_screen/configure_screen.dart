@@ -1,38 +1,28 @@
 import 'package:fast_barcode_scanner/fast_barcode_scanner.dart';
-import 'package:fast_barcode_scanner_example/configure_screen/overlay_selector.dart';
-import 'package:fast_barcode_scanner_example/scanning_screen/scanning_overlay_config.dart';
 import 'package:flutter/material.dart';
 
 import 'type_selector.dart';
 
-typedef OnOverlayConfigurationChanged = void Function(
-    ScanningOverlayConfig overlayConfig);
-
 class ConfigureScreen extends StatefulWidget {
-  const ConfigureScreen(this._currentConfiguration, this._overlayConfig,
-      {super.key, this.onOverlayConfigurationChanged});
-
-  final ScannerConfiguration _currentConfiguration;
-  final ScanningOverlayConfig _overlayConfig;
-  final OnOverlayConfigurationChanged? onOverlayConfigurationChanged;
+  const ConfigureScreen({super.key});
 
   @override
   State<ConfigureScreen> createState() => _ConfigureScreenState();
 }
 
 class _ConfigureScreenState extends State<ConfigureScreen> {
-  late ScannerConfiguration _config;
-  late ScanningOverlayConfig _overlayConfig;
+  _ConfigureScreenState()
+      : framerate =
+            CameraController.shared.state.value.scannerConfig!.framerate;
 
-  @override
-  void initState() {
-    _config = widget._currentConfiguration;
-    _overlayConfig = widget._overlayConfig;
-    super.initState();
-  }
+  final cameraController = CameraController.shared;
+
+  Framerate framerate;
 
   @override
   Widget build(BuildContext context) {
+    final state = cameraController.state.value;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configuration'),
@@ -73,78 +63,68 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
           tiles: [
             ListTile(
               title: const Text('Active code types'),
-              subtitle: Text(_config.types.map((e) => e.name).join(', ')),
+              subtitle: Text(
+                  state.scannerConfig!.types.map((e) => e.name).join(', ')),
               onTap: () async {
                 final types = await Navigator.push<List<BarcodeType>>(context,
                     MaterialPageRoute(builder: (_) {
-                  return BarcodeTypeSelector(_config);
+                  return BarcodeTypeSelector(state.scannerConfig!);
                 }));
-                setState(() {
-                  _config = _config.copyWith(types: types);
-                });
+                // TODO: Update camera config
               },
             ),
             ListTile(
               title: const Text('Resolution'),
               trailing: DropdownButton<Resolution>(
-                  value: _config.resolution,
+                  value: state.scannerConfig!.resolution,
                   onChanged: (value) {
-                    setState(() {
-                      _config = _config.copyWith(resolution: value);
-                    });
+                    // TODO: Update camera config
                   },
                   items: buildDropdownItems(Resolution.values)),
             ),
             ListTile(
               title: const Text('Framerate'),
               trailing: DropdownButton<Framerate>(
-                  value: _config.framerate,
-                  onChanged: (value) {
-                    setState(() {
-                      _config = _config.copyWith(framerate: value);
-                    });
+                  value: framerate,
+                  onChanged: (newValue) {
+                    // TODO: Update camera config
+                    setState(() => framerate = newValue!);
                   },
                   items: buildDropdownItems(Framerate.values)),
             ),
             ListTile(
               title: const Text('Position'),
               trailing: DropdownButton<CameraPosition>(
-                  value: _config.position,
+                  value: state.scannerConfig!.position,
                   onChanged: (value) {
-                    setState(() => _config = _config.copyWith(position: value));
+                    // TODO: Update camera config
                   },
                   items: buildDropdownItems(CameraPosition.values)),
             ),
             ListTile(
               title: const Text('Detection Mode'),
               trailing: DropdownButton<DetectionMode>(
-                value: _config.detectionMode,
+                value: state.scannerConfig!.detectionMode,
                 onChanged: (value) {
-                  setState(
-                    () => _config = _config.copyWith(detectionMode: value),
-                  );
+                  // TODO: Update camera configt
                 },
                 items: buildDropdownItems(DetectionMode.values),
               ),
             ),
-            ListTile(
-              title: const Text('Overlay'),
-              subtitle: Text(
-                  _overlayConfig.enabledOverlays.map((e) => e.name).join(', ')),
-              onTap: () async {
-                final overlayRoute = MaterialPageRoute(
-                  builder: (_) => OverlaySelector(_overlayConfig),
-                );
-
-                final overlays = await Navigator.push(context, overlayRoute);
-
-                setState(() {
-                  _overlayConfig = _overlayConfig.copyWith(
-                    enabledOverlays: overlays,
-                  );
-                });
-              },
-            ),
+            const Divider(),
+            //   CheckboxListTile(
+            //   value: _selected.contains(item),
+            //   title: Text("Material Design"),
+            //   onChanged: (newValue) {
+            //     setState(() {
+            //       if (newValue == true) {
+            //         _selected.add(item);
+            //       } else {
+            //         _selected.remove(item);
+            //       }
+            //     });
+            //   },
+            // );
           ],
         ).toList(),
       ),
@@ -160,11 +140,12 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
   Future<void> applyChanges() async {
     try {
       await CameraController.shared.configure(
-        types: _config.types,
-        framerate: _config.framerate,
-        resolution: _config.resolution,
-        detectionMode: _config.detectionMode,
-        position: _config.position,
+        types: cameraController.state.value.scannerConfig!.types,
+        framerate: framerate,
+        resolution: cameraController.state.value.scannerConfig!.resolution,
+        detectionMode:
+            cameraController.state.value.scannerConfig!.detectionMode,
+        position: cameraController.state.value.scannerConfig!.position,
       );
     } catch (error) {
       if (!mounted) return;
@@ -180,7 +161,7 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
       return;
     } finally {
       if (mounted) {
-        Navigator.pop(context, _config);
+        Navigator.pop(context);
       }
     }
   }

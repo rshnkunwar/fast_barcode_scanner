@@ -13,6 +13,7 @@ sealed class ScannerException : Exception() {
     class ConfigurationException(val error: Exception) : ScannerException()
     class InvalidArguments(val args: HashMap<String, Any>) : ScannerException()
     class InvalidCodeType(val type: String) : ScannerException()
+    class InvalidImageData() : ScannerException()
     class LoadingFailed(val error: IOException) : ScannerException()
     class AnalysisFailed(val error: Exception) : ScannerException()
     class AlreadyPicking() : ScannerException()
@@ -64,6 +65,7 @@ sealed class ScannerException : Exception() {
             )
             is InvalidCodeType -> result.error("INVALID_CODE", "Invalid code type", type)
             is ActivityNotConnected -> result.error("NO_ACTIVITY", "No activity is connected", null)
+            is InvalidImageData -> result.error("INVALID_IMAGEDATA", "Could not parse image byte array", null)
             is LoadingFailed -> result.error(
                 "LOADING_FAILED",
                 "Could not load asset",
