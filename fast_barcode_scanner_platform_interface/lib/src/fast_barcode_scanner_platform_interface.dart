@@ -6,15 +6,14 @@ import 'types/barcode.dart';
 import 'types/barcode_type.dart';
 import 'types/camera_information.dart';
 
-/// Callback handler method for receiving scanned codes.
+/// A callback that receives all uniquely scanned barcodes in an image.
 typedef OnDetectionHandler = void Function(List<Barcode>);
 
-/// The interface that implementations of fast_barcode_scanner must implement.
+/// The interface for implementations of fast_barcode_scanner.
 ///
-/// Platform implementations should extend this class rather than implement it.
-/// Extending this class (using `extends`) ensures that the subclass will get the default implementation, while
-/// platform implementations that `implements` this interface will be broken by newly added
-/// [FastBarcodeScannerPlatform] methods.
+/// Platform implementations should `extend` this class
+/// rather than to `implement` it. This ensures that the subclass
+/// gets the default implementations.
 abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   FastBarcodeScannerPlatform() : super(token: _token);
 
@@ -23,7 +22,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   static FastBarcodeScannerPlatform _instance =
       MethodChannelFastBarcodeScanner();
 
-  /// The default instance of [FastBarcodeScannerPlatform] to use.
+  /// The instance of [FastBarcodeScannerPlatform] in use.
   ///
   /// Defaults to [MethodChannelFastBarcodeScanner].
   static FastBarcodeScannerPlatform get instance => _instance;
@@ -36,7 +35,8 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   }
 
   /// Initializes and starts the native camera interface.
-  /// Returns a [CameraInformation] the camera is setup with.
+  ///
+  /// Returns the [CameraInformation] the camera is setup with.
   Future<CameraInformation> init(
     List<BarcodeType> types,
     Resolution resolution,
@@ -45,41 +45,52 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     CameraPosition position,
     ApiOptions api,
   ) {
-    throw UnimplementedError('init() has not been implemented');
+    throw UnimplementedError('Missing init() implementation');
   }
 
-  /// Resumes the camera from the stopped state on the platform.
+  /// Starts the camera and detector, if in stopped state.
+  ///
+  /// TODO: What is the final camera state?
   Future<void> start() {
-    throw UnimplementedError('resume() has not been implemented');
+    throw UnimplementedError('Missing start() implementation');
   }
 
-  /// Stops the camera on the platform.
+  /// Stops the camera and detector, if in running state.
+  ///
+  /// TODO: What is the final camera state?
   Future<void> stop() {
-    throw UnimplementedError('stop() has not been implemented');
+    throw UnimplementedError('Missing stop() implementation');
   }
 
-  // Starts the detector, if it was paused.
+  /// Starts the detector, if it was paused.
+  ///
+  /// TODO: What happens when camera is stopped?
   Future<void> startDetector() {
-    throw UnimplementedError('startDetector() has not been implemented');
+    throw UnimplementedError('Missing startDetector() implementation');
   }
 
-  // Stops the detector. Keeps the preview running.
+  /// Stops the detector, if it was running.
+  ///
+  /// The camera and preview keep running.
   Future<void> stopDetector() {
-    throw UnimplementedError('stopDetector() has not been implemented');
+    throw UnimplementedError('Missing stopDetector() implementation');
   }
 
   /// Stops and clears the camera resources.
+  ///
+  /// TODO: What happens to the platform interface?
   Future<void> dispose() {
-    throw UnimplementedError('dispose() has not been implemented');
+    throw UnimplementedError('Missing dispose() implementation');
   }
 
   /// Toggles the torch, if available.
   Future<bool> toggleTorch() {
-    throw UnimplementedError('toggleTorch() has not been implemented');
+    throw UnimplementedError('Missing toggleTorch() implementation');
   }
 
-  /// Changes the supplied camera settings.
-  /// Nil values are ignored and stay unchanged.
+  /// Changes the underlying camera configuration.
+  ///
+  /// `null` values stay unchanged.
   Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
     Resolution? resolution,
@@ -87,15 +98,16 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     DetectionMode? detectionMode,
     CameraPosition? position,
   }) {
-    throw UnimplementedError('changeConfiguration() has not been implemented');
+    throw UnimplementedError('Missing changeConfiguration() implementation');
   }
 
-  /// Set the method to be called when a barcode is detected
-  void setOnDetectHandler(OnDetectionHandler handler) {
-    throw UnimplementedError('setOnDetectHandler() has not been implemented');
+  /// Set the method to be called when a barcode is detected.
+  void setOnDetectionHandler(OnDetectionHandler handler) {
+    throw UnimplementedError('Missing setOnDetectionHandler() implementation');
   }
 
+  ///
   Future<List<Barcode>?> scanImage(ImageSource source) {
-    throw UnimplementedError('scanImage() has not been implemented');
+    throw UnimplementedError('Missing scanImage() implementation');
   }
 }

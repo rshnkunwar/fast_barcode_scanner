@@ -107,7 +107,7 @@ class CameraController {
         }
       });
 
-      _platform.setOnDetectHandler(_onDetectHandler);
+      _platform.setOnDetectionHandler(_onDetectHandler);
 
       final scanner = ScannerConfiguration(
           types, resolution, framerate, position, detectionMode);

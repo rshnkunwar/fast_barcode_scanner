@@ -41,7 +41,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   }
 
   @override
-  void setOnDetectHandler(OnDetectionHandler handler) async {
+  void setOnDetectionHandler(OnDetectionHandler handler) async {
     _onDetectHandler = handler;
     _barcodeEventStreamSubscription ??=
         _detectionEventStream.listen(_handlePlatformBarcodeEvent);
