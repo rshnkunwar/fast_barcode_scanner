@@ -18,7 +18,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   final Stream<dynamic> _detectionEventStream =
       _detectionEventsChannel.receiveBroadcastStream();
   StreamSubscription<dynamic>? _barcodeEventStreamSubscription;
-  OnDetectionHandler? _onDetectHandler;
+  OnDetectionHandler? _onDetectionHandler;
 
   @override
   Future<CameraInformation> init(
@@ -37,12 +37,13 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
       'mode': detectionMode.name,
       ...api.map
     });
+
     return CameraInformation(response);
   }
 
   @override
   void setOnDetectionHandler(OnDetectionHandler handler) async {
-    _onDetectHandler = handler;
+    _onDetectionHandler = handler;
     _barcodeEventStreamSubscription ??=
         _detectionEventStream.listen(_handlePlatformBarcodeEvent);
   }
@@ -63,7 +64,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   Future<void> dispose() async {
     await _barcodeEventStreamSubscription?.cancel();
     _barcodeEventStreamSubscription = null;
-    _onDetectHandler = null;
+    _onDetectionHandler = null;
     return _channel.invokeMethod('dispose');
   }
 
@@ -86,6 +87,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
       if (framerate != null) 'fps': framerate.name,
       if (position != null) 'pos': position.name,
     });
+
     return CameraInformation(response);
   }
 
@@ -104,7 +106,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
     // Barcode init will throw in this case. Ignore this cases and continue as if nothing happened.
     try {
       final barcodes = (data as List<dynamic>).map((e) => Barcode(e)).toList();
-      _onDetectHandler?.call(barcodes);
+      _onDetectionHandler?.call(barcodes);
       // ignore: empty_catches
     } catch (e) {}
   }
