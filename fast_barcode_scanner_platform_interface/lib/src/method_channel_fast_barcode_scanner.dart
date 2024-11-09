@@ -42,7 +42,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   }
 
   @override
-  void setOnDetectionHandler(OnDetectionHandler handler) async {
+  void setOnDetectionHandler(OnDetectionHandler handler) {
     _onDetectionHandler = handler;
     _barcodeEventStreamSubscription ??=
         _detectionEventStream.listen(_handlePlatformBarcodeEvent);
@@ -61,14 +61,6 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   Future<void> stopDetector() => _channel.invokeMethod('stopDetector');
 
   @override
-  Future<void> dispose() async {
-    await _barcodeEventStreamSubscription?.cancel();
-    _barcodeEventStreamSubscription = null;
-    _onDetectionHandler = null;
-    return _channel.invokeMethod('dispose');
-  }
-
-  @override
   Future<bool> toggleTorch() =>
       _channel.invokeMethod('torch').then((isOn) => isOn);
 
@@ -82,13 +74,21 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   }) async {
     final response = await _channel.invokeMethod('config', {
       if (types != null) 'types': types.map((e) => e.name).toList(),
-      if (detectionMode != null) 'mode': detectionMode.name,
       if (resolution != null) 'res': resolution.name,
       if (framerate != null) 'fps': framerate.name,
+      if (detectionMode != null) 'mode': detectionMode.name,
       if (position != null) 'pos': position.name,
     });
 
     return CameraInformation(response);
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _barcodeEventStreamSubscription?.cancel();
+    _barcodeEventStreamSubscription = null;
+    _onDetectionHandler = null;
+    return _channel.invokeMethod('dispose');
   }
 
   @override
@@ -103,11 +103,16 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
 
   void _handlePlatformBarcodeEvent(dynamic data) {
     // This might fail if the code type is not present in the list of available code types.
-    // Barcode init will throw in this case. Ignore this cases and continue as if nothing happened.
+    // Barcode() will throw in this case and the error is suppressed in release mode.
     try {
       final barcodes = (data as List<dynamic>).map((e) => Barcode(e)).toList();
       _onDetectionHandler?.call(barcodes);
       // ignore: empty_catches
-    } catch (e) {}
+    } catch (e) {
+      assert(
+        true,
+        "Error converting barcode from native side, original error: $e",
+      );
+    }
   }
 }
