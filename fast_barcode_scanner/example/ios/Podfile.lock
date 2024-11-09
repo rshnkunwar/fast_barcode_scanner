@@ -19,10 +19,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
 
 SPEC CHECKSUMS:
-  fast_barcode_scanner: 1c1cb51eccce89ad32444eb67eccf83cf50d984e
+  fast_barcode_scanner: ec672b7ff60593416c06f48e0be3d44078fba8fd
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  integration_test: 13825b8a9334a850581300559b8839134b124670
+  integration_test: 466c52117058fb34426cf6dd9bc35f61a4b454ab
 
 PODFILE CHECKSUM: a57f30d18f102dd3ce366b1d62a55ecbef2158e5
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
