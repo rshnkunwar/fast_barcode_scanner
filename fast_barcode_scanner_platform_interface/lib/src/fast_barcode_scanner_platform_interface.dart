@@ -81,6 +81,8 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   }
 
   /// Toggles the torch, if possible.
+  ///
+  /// Retuns `true` when the torch is now on.
   Future<bool> toggleTorch() {
     throw UnimplementedError('Missing toggleTorch() implementation');
   }
