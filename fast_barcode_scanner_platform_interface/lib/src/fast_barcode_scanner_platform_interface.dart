@@ -47,6 +47,11 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     throw UnimplementedError('Missing init() implementation');
   }
 
+  /// Set the method to be called when a barcode is detected.
+  void setOnDetectionHandler(OnDetectionHandler handler) {
+    throw UnimplementedError('Missing setOnDetectionHandler() implementation');
+  }
+
   /// Starts the camera and detector, if in stopped state.
   ///
   /// TODO: What is the final camera state?
@@ -75,14 +80,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     throw UnimplementedError('Missing stopDetector() implementation');
   }
 
-  /// Stops and clears the camera resources.
-  ///
-  /// TODO: What happens to the platform interface?
-  Future<void> dispose() {
-    throw UnimplementedError('Missing dispose() implementation');
-  }
-
-  /// Toggles the torch, if available.
+  /// Toggles the torch, if possible.
   Future<bool> toggleTorch() {
     throw UnimplementedError('Missing toggleTorch() implementation');
   }
@@ -90,6 +88,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   /// Changes the underlying camera configuration.
   ///
   /// `null` values stay unchanged.
+  /// TODO: Which camera states are supported?
   Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
     Resolution? resolution,
@@ -100,12 +99,14 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     throw UnimplementedError('Missing changeConfiguration() implementation');
   }
 
-  /// Set the method to be called when a barcode is detected.
-  void setOnDetectionHandler(OnDetectionHandler handler) {
-    throw UnimplementedError('Missing setOnDetectionHandler() implementation');
+  /// Stops and clears the camera resources.
+  ///
+  /// TODO: What happens to the platform interface?
+  Future<void> dispose() {
+    throw UnimplementedError('Missing dispose() implementation');
   }
 
-  ///
+  /// Scans a still image apart from the live camera scanner.
   Future<List<Barcode>?> scanImage(ImageSource source) {
     throw UnimplementedError('Missing scanImage() implementation');
   }
