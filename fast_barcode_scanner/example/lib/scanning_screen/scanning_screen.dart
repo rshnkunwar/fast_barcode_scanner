@@ -9,11 +9,11 @@ import 'scans_counter.dart';
 class ScanningScreen extends StatefulWidget {
   const ScanningScreen({
     super.key,
-    this.apiMode = const ApiOptions(),
+    this.apiMode = const ApiMode(),
     required this.dispose,
   });
 
-  final ApiOptions apiMode;
+  final ApiMode apiMode;
   final bool dispose;
 
   @override

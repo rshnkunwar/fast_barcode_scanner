@@ -60,27 +60,16 @@ class CameraInformation {
   }
 }
 
-// abstract class ApiMode {
-//   const ApiMode();
-
-//   String get name;
-
-//   Map<String, dynamic> get configMap => {
-//         "apiMode": name,
-//         ...config,
-//       };
-
-//   Map<String, dynamic> get config => {};
-// }
-
-sealed class AppleApiOption {
-  const AppleApiOption();
+sealed class AppleApiMode {
+  const AppleApiMode();
   String get name;
   Map<String, dynamic> get options;
 }
 
-class AVFoundationApiOptions extends AppleApiOption {
-  const AVFoundationApiOptions();
+class AVFoundationApiMode extends AppleApiMode {
+  const AVFoundationApiMode();
+
+  static const avFoundation = AVFoundationApiMode();
 
   @override
   String get name => "avfoundation";
@@ -89,10 +78,10 @@ class AVFoundationApiOptions extends AppleApiOption {
   Map<String, dynamic> get options => {};
 }
 
-class VisionApiMode extends AppleApiOption {
+class VisionApiMode extends AppleApiMode {
   final double confidence;
-  VisionApiMode({required double confidence})
-      : confidence = clampDouble(confidence, 0, 1);
+
+  const VisionApiMode({required this.confidence});
 
   @override
   String get name => "vision";
@@ -101,15 +90,15 @@ class VisionApiMode extends AppleApiOption {
   Map<String, dynamic> get options => {'confidence': confidence};
 }
 
-enum AndroidApiOptions { mlKit }
+enum AndroidApiMode { mlKit }
 
-class ApiOptions {
-  final AppleApiOption apple;
-  final AndroidApiOptions android;
+class ApiMode {
+  final AppleApiMode apple;
+  final AndroidApiMode android;
 
-  const ApiOptions({
-    this.apple = const AVFoundationApiOptions(),
-    this.android = AndroidApiOptions.mlKit,
+  const ApiMode({
+    this.apple = const AVFoundationApiMode(),
+    this.android = AndroidApiMode.mlKit,
   });
 
   Map<String, dynamic> get map {

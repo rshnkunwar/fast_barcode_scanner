@@ -38,7 +38,7 @@ void main() {
           Framerate.fps60,
           DetectionMode.pauseDetection,
           CameraPosition.back,
-          const ApiOptions());
+          const ApiMode());
 
       // Assert
       expect(mockChannel.log, [

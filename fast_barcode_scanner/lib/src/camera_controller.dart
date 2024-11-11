@@ -83,7 +83,7 @@ class CameraController {
     required Framerate framerate,
     required CameraPosition position,
     required DetectionMode detectionMode,
-    required ApiOptions api,
+    required ApiMode api,
     OnDetectionHandler? onScan,
   }) async {
     try {

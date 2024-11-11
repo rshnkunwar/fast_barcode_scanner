@@ -14,7 +14,7 @@ export 'package:fast_barcode_scanner_platform_interface/fast_barcode_scanner_pla
         DetectionMode,
         CameraPosition,
         CameraInformation,
-        ApiOptions;
+        ApiMode;
 
 export 'src/overlays/code_boundary_overlay/code_boundary_overlay.dart';
 export 'src/overlays/overlays.dart';

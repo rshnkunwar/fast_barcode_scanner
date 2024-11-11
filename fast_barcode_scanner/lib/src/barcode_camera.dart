@@ -29,7 +29,7 @@ class BarcodeCamera extends StatefulWidget {
     this.resolution = Resolution.hd720,
     this.framerate = Framerate.fps30,
     this.position = CameraPosition.back,
-    this.api = const ApiOptions(),
+    this.api = const ApiMode(),
     this.onScan,
     this.children = const [],
     this.dispose = true,
@@ -41,7 +41,7 @@ class BarcodeCamera extends StatefulWidget {
   final Framerate framerate;
   final DetectionMode mode;
   final CameraPosition position;
-  final ApiOptions api;
+  final ApiMode api;
   final OnDetectionHandler? onScan;
   final List<Widget> children;
   final ErrorCallback onError;

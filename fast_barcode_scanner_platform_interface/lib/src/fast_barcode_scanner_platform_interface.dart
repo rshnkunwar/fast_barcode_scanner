@@ -42,7 +42,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
     Framerate framerate,
     DetectionMode detectionMode,
     CameraPosition position,
-    ApiOptions api,
+    ApiMode api,
   ) {
     throw UnimplementedError('Missing init() implementation');
   }

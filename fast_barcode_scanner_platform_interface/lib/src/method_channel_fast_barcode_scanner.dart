@@ -27,7 +27,7 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
     Framerate framerate,
     DetectionMode detectionMode,
     CameraPosition position,
-    ApiOptions api,
+    ApiMode api,
   ) async {
     final response = await _channel.invokeMethod('init', {
       'types': types.map((e) => e.name).toList(growable: false),
