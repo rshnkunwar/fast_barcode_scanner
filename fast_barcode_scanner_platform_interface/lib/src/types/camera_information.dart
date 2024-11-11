@@ -17,18 +17,22 @@ enum PerformanceMode {
 /// Dictates how the camera reacts to detections
 enum DetectionMode {
   /// Pauses the detection of further barcodes when a barcode is detected.
-  /// The camera feed continues.
+  ///
+  /// The preview continues.
   pauseDetection,
 
-  /// Pauses the camera feed on detection.
-  /// This will inevitably stop the detection of barcodes.
+  /// Pauses the preview on detection.
+  ///
+  /// This, of cause, also stops the detector.
   pauseVideo,
 
-  /// Does nothing on detection. May need to throttle detections using continuous.
+  /// Does nothing on detection.
+  ///
+  /// Throttling detections is recommended using this mode.
   continuous
 }
 
-/// The position of the camera.
+/// The position of the camera to use.
 enum CameraPosition { front, back }
 
 /// The configuration by which the camera feed can be laid out in the UI.
@@ -36,7 +40,7 @@ class CameraInformation {
   /// The height of the camera feed in points.
   final Size videoSize;
 
-  /// The frame inside of `videoSize` where barcodes are detected.
+  /// The frame inside of [videoSize] where barcodes are detected.
   final Rect analysisFrame;
 
   CameraInformation(Map<dynamic, dynamic> response)
