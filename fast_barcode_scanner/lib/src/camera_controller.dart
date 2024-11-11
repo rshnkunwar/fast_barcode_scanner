@@ -36,8 +36,8 @@ class ScannerState {
   }
 }
 
-/// This class is purely for convinience. You can use `MethodChannelFastBarcodeScanner`
-/// or even `FastBarcodeScannerPlatform` directly, if you so wish.
+/// This class is purely for convinience. You can use [MethodChannelFastBarcodeScanner]
+/// or even [FastBarcodeScannerPlatform] directly, if you so wish.
 class CameraController {
   CameraController._internal() : super();
   static final shared = CameraController._internal();
@@ -54,21 +54,18 @@ class CameraController {
 
   static const scannedCodeTimeout = Duration(milliseconds: 250);
 
-  /// Indicates if the torch is currently switching.
+  /// A lock that prevents additional commands to the platform side.
   ///
-  /// Used to prevent command-spamming.
-  bool _togglingTorch = false;
+  /// Locks while the platfrom is configuring the camera.
+  bool _isConfiguringLock = false;
 
-  /// Indicates if the camera is currently configuring itself.
-  ///
-  /// Used to prevent command-spamming.
-  bool _configuring = false;
-
-  /// User-defined handler, called when a barcode is detected
+  /// User-defined handler that is called on barcode detection.
   OnDetectionHandler? _onScan;
 
-  /// Curried function for [_onScan]. This ensures that each scan receipt is done
-  /// consistently. We log [_lastScanTime] and update the [resultNotifier] ValueNotifier
+  /// Builds a wrapper for [_onScan].
+  ///
+  /// This ensures that each scan receipt is done consistently.
+  /// We log [_lastScanTime] and update the [resultNotifier] ValueNotifier
   OnDetectionHandler _buildScanHandler(OnDetectionHandler? onScan) {
     return (barcodes) {
       _lastScanTime = DateTime.now();
@@ -95,6 +92,7 @@ class CameraController {
       );
 
       _onScan = _buildScanHandler(onScan);
+
       _scanSilencerSubscription =
           Stream.periodic(scannedCodeTimeout).listen((event) {
         final scanTime = _lastScanTime;
@@ -181,20 +179,23 @@ class CameraController {
   }
 
   Future<bool> toggleTorch() async {
-    if (!_togglingTorch) {
-      _togglingTorch = true;
-
-      try {
-        state.value = state.value.withTorch(await _platform.toggleTorch());
-      } on Error catch (error) {
-        state.value = state.value.withError(error);
-        eventNotifier.value = ScannerEvent.error;
-      } catch (error) {
-        rethrow;
-      }
-
-      _togglingTorch = false;
+    if (!state.value.isInitialized || _isConfiguringLock) {
+      return state.value.torch;
     }
+
+    _isConfiguringLock = true;
+
+    try {
+      final torchState = await _platform.toggleTorch();
+      state.value = state.value.withTorch(torchState);
+    } on Error catch (error) {
+      state.value = state.value.withError(error);
+      eventNotifier.value = ScannerEvent.error;
+    } catch (error) {
+      rethrow;
+    }
+
+    _isConfiguringLock = false;
 
     return state.value.torch;
   }
@@ -206,9 +207,9 @@ class CameraController {
     CameraPosition? position,
     OnDetectionHandler? onScan,
   }) async {
-    if (!state.value.isInitialized || _configuring) return;
+    if (!state.value.isInitialized || _isConfiguringLock) return;
 
-    _configuring = true;
+    _isConfiguringLock = true;
 
     final scannerConfig = state.value.scannerConfig!;
 
@@ -237,7 +238,7 @@ class CameraController {
       rethrow;
     }
 
-    _configuring = false;
+    _isConfiguringLock = false;
   }
 
   Future<List<Barcode>?> scanImage(ImageSource source) async {
