@@ -9,7 +9,6 @@ class Barcode {
   Barcode(List<dynamic> data)
       : type = BarcodeType.values.firstWhere((e) => e.name == data[0]),
         value = data[1],
-        valueType = data[2] != null ? BarcodeValueType.values[data[2]] : null,
         boundingBox = parsePoints(data.sublist(3).cast<double>());
 
   /// The type of the barcode.
@@ -21,12 +20,6 @@ class Barcode {
   ///
   ///
   final String value;
-
-  /// The type of content of the barcode.
-  ///
-  /// On available on Android.
-  /// Returns [null] on iOS.
-  final BarcodeValueType? valueType;
 
   /// The corners of the visible barcode. This can be used for custom drawing.
   final Rectangle? boundingBox;
@@ -42,16 +35,11 @@ class Barcode {
       other is Barcode &&
       other.type == type &&
       other.value == value &&
-      other.valueType == valueType &&
       other.boundingBox == boundingBox;
 
   @override
   int get hashCode =>
-      super.hashCode ^
-      type.hashCode ^
-      value.hashCode ^
-      valueType.hashCode ^
-      boundingBox.hashCode;
+      super.hashCode ^ type.hashCode ^ value.hashCode ^ boundingBox.hashCode;
 
   @override
   String toString() {
@@ -59,7 +47,6 @@ class Barcode {
     Barcode {
       type: $type,
       value: $value,
-      valueType: $valueType,
       rect: $boundingBox
     }
     ''';
