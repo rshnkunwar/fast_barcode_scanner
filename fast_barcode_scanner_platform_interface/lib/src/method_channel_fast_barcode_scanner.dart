@@ -23,18 +23,16 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   @override
   Future<CameraInformation> init(
     List<BarcodeType> types,
-    Resolution resolution,
-    Framerate framerate,
+    PerformanceMode mode,
     DetectionMode detectionMode,
     CameraPosition position,
     ApiMode api,
   ) async {
     final response = await _channel.invokeMethod('init', {
       'types': types.map((e) => e.name).toList(growable: false),
-      'res': resolution.name,
-      'fps': framerate.name,
+      'mode': mode,
       'pos': position.name,
-      'mode': detectionMode.name,
+      'detectionMode': detectionMode.name,
       ...api.map
     });
 
@@ -67,16 +65,14 @@ class MethodChannelFastBarcodeScanner extends FastBarcodeScannerPlatform {
   @override
   Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
-    Resolution? resolution,
-    Framerate? framerate,
+    PerformanceMode? mode,
     DetectionMode? detectionMode,
     CameraPosition? position,
   }) async {
     final response = await _channel.invokeMethod('config', {
       if (types != null) 'types': types.map((e) => e.name).toList(),
-      if (resolution != null) 'res': resolution.name,
-      if (framerate != null) 'fps': framerate.name,
-      if (detectionMode != null) 'mode': detectionMode.name,
+      if (mode != null) 'mode': mode.name,
+      if (detectionMode != null) 'detectionMode': detectionMode.name,
       if (position != null) 'pos': position.name,
     });
 

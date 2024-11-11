@@ -2,11 +2,17 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
-/// Supported resolutions. Not all devices support all resolutions!
-enum Resolution { sd480, hd720, hd1080, hd4k }
+///
+enum PerformanceMode {
+  /// Let the underlying system decide
+  system,
 
-/// Supported Framerates. Not all devices support all framerates!
-enum Framerate { fps30, fps60, fps120, fps240 }
+  /// Favor battery live
+  economic,
+
+  /// Favor high resolution and shutter speed
+  high
+}
 
 /// Dictates how the camera reacts to detections
 enum DetectionMode {

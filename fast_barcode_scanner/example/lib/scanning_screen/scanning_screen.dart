@@ -89,9 +89,8 @@ class _ScanningScreenState extends State<ScanningScreen> {
           BarcodeType.code128,
           BarcodeType.qr,
         ],
-        resolution: Resolution.hd720,
-        framerate: Framerate.fps30,
-        mode: DetectionMode.continuous,
+        mode: PerformanceMode.system,
+        detectionMode: DetectionMode.continuous,
         position: CameraPosition.back,
         api: widget.apiMode,
         onScan: (code) {

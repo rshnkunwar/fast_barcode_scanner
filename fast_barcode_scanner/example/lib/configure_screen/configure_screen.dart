@@ -11,13 +11,9 @@ class ConfigureScreen extends StatefulWidget {
 }
 
 class _ConfigureScreenState extends State<ConfigureScreen> {
-  _ConfigureScreenState()
-      : framerate =
-            CameraController.shared.state.value.scannerConfig!.framerate;
+  _ConfigureScreenState();
 
   final cameraController = CameraController.shared;
-
-  Framerate framerate;
 
   @override
   Widget build(BuildContext context) {
@@ -74,23 +70,13 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
               },
             ),
             ListTile(
-              title: const Text('Resolution'),
-              trailing: DropdownButton<Resolution>(
-                  value: state.scannerConfig!.resolution,
+              title: const Text('Mode'),
+              trailing: DropdownButton<PerformanceMode>(
+                  value: state.scannerConfig!.mode,
                   onChanged: (value) {
                     // TODO: Update camera config
                   },
-                  items: buildDropdownItems(Resolution.values)),
-            ),
-            ListTile(
-              title: const Text('Framerate'),
-              trailing: DropdownButton<Framerate>(
-                  value: framerate,
-                  onChanged: (newValue) {
-                    // TODO: Update camera config
-                    setState(() => framerate = newValue!);
-                  },
-                  items: buildDropdownItems(Framerate.values)),
+                  items: buildDropdownItems(PerformanceMode.values)),
             ),
             ListTile(
               title: const Text('Position'),
@@ -141,8 +127,7 @@ class _ConfigureScreenState extends State<ConfigureScreen> {
     try {
       await CameraController.shared.configure(
         types: cameraController.state.value.scannerConfig!.types,
-        framerate: framerate,
-        resolution: cameraController.state.value.scannerConfig!.resolution,
+        mode: cameraController.state.value.scannerConfig!.mode,
         detectionMode:
             cameraController.state.value.scannerConfig!.detectionMode,
         position: cameraController.state.value.scannerConfig!.position,

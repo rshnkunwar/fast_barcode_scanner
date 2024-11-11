@@ -20,8 +20,6 @@ void main() {
             'init': {
               'textureId': 0,
               'targetRotation': 0,
-              'height': 1080,
-              'width': 1920,
               'analysisWidth': 0,
               'analysisHeight': 0,
             }
@@ -34,8 +32,7 @@ void main() {
       // Act
       final response = await scanner.init(
           [BarcodeType.ean13],
-          Resolution.hd1080,
-          Framerate.fps60,
+          PerformanceMode.system,
           DetectionMode.pauseDetection,
           CameraPosition.back,
           const ApiMode());
@@ -56,8 +53,6 @@ void main() {
         CameraInformation({
           'textureId': 0,
           'targetRotation': 0,
-          'height': 1080,
-          'width': 1920,
           'analysisWidth': 0,
           'analysisHeight': 0,
         }),
@@ -75,10 +70,10 @@ void main() {
       expect(
         () => scanner.init(
           [BarcodeType.ean13],
-          Resolution.hd720,
-          Framerate.fps60,
+          PerformanceMode.system,
           DetectionMode.pauseDetection,
           CameraPosition.back,
+          ApiMode(),
         ),
         throwsA(isA<PlatformException>()
             .having((e) => e.code, 'code', 'TESTING_ERROR_CODE')
@@ -97,8 +92,6 @@ void main() {
             'init': {
               'textureId': 0,
               'targetRotation': 0,
-              'height': 1080,
-              'width': 1920,
               'analysisWidth': 0,
               'analysisHeight': 0,
             }
@@ -108,10 +101,10 @@ void main() {
 
       await scanner.init(
         [BarcodeType.ean13],
-        Resolution.hd720,
-        Framerate.fps60,
+        PerformanceMode.system,
         DetectionMode.pauseDetection,
         CameraPosition.back,
+        ApiMode(),
       );
     });
 
@@ -158,8 +151,6 @@ void main() {
             'init': {
               'textureId': 0,
               'targetRotation': 0,
-              'height': 1080,
-              'width': 1920,
               'analysisWidth': 0,
               'analysisHeight': 0,
             },
@@ -169,10 +160,10 @@ void main() {
 
       await scanner.init(
         [BarcodeType.ean13],
-        Resolution.hd720,
-        Framerate.fps60,
+        PerformanceMode.system,
         DetectionMode.pauseDetection,
         CameraPosition.back,
+        ApiMode(),
       );
     });
 
@@ -199,8 +190,6 @@ void main() {
           'config': {
             'textureId': 0,
             'targetRotation': 0,
-            'height': 720,
-            'width': 1280,
             'analysisWidth': 0,
             'analysisHeight': 0,
           }
@@ -210,17 +199,15 @@ void main() {
       // Act
       final response = await scanner.changeConfiguration(
         detectionMode: DetectionMode.continuous,
-        framerate: Framerate.fps120,
-        resolution: Resolution.hd720,
+        mode: PerformanceMode.system,
         position: CameraPosition.front,
       );
 
       // Assert
       expect(mockChannel.log, [
         isMethodCall('config', arguments: {
-          'mode': 'continuous',
-          'fps': 'fps120',
-          'res': 'hd720',
+          'mode': 'system',
+          'detectionMode': 'continuous',
           'pos': 'front'
         })
       ]);
@@ -228,8 +215,6 @@ void main() {
         CameraInformation({
           'textureId': 0,
           'targetRotation': 0,
-          'height': 720,
-          'width': 1280,
           'analysisWidth': 0,
           'analysisHeight': 0,
         }),

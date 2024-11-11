@@ -25,9 +25,8 @@ class BarcodeCamera extends StatefulWidget {
   const BarcodeCamera({
     super.key,
     required this.types,
-    this.mode = DetectionMode.pauseVideo,
-    this.resolution = Resolution.hd720,
-    this.framerate = Framerate.fps30,
+    this.mode = PerformanceMode.system,
+    this.detectionMode = DetectionMode.pauseVideo,
     this.position = CameraPosition.back,
     this.api = const ApiMode(),
     this.onScan,
@@ -37,9 +36,8 @@ class BarcodeCamera extends StatefulWidget {
   }) : onError = onError ?? _defaultOnError;
 
   final List<BarcodeType> types;
-  final Resolution resolution;
-  final Framerate framerate;
-  final DetectionMode mode;
+  final PerformanceMode mode;
+  final DetectionMode detectionMode;
   final CameraPosition position;
   final ApiMode api;
   final OnDetectionHandler? onScan;
@@ -64,17 +62,15 @@ class BarcodeCameraState extends State<BarcodeCamera> {
     final configurationFuture = cameraController.state.value.isInitialized
         ? cameraController.configure(
             types: widget.types,
-            resolution: widget.resolution,
-            framerate: widget.framerate,
+            mode: widget.mode,
             position: widget.position,
             onScan: widget.onScan,
           )
         : cameraController.initialize(
             types: widget.types,
-            resolution: widget.resolution,
-            framerate: widget.framerate,
+            mode: widget.mode,
             position: widget.position,
-            detectionMode: widget.mode,
+            detectionMode: widget.detectionMode,
             onScan: widget.onScan,
             api: widget.api,
           );

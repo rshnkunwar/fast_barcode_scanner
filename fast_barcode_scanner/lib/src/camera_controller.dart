@@ -79,8 +79,7 @@ class CameraController {
 
   Future<void> initialize({
     required List<BarcodeType> types,
-    required Resolution resolution,
-    required Framerate framerate,
+    required PerformanceMode mode,
     required CameraPosition position,
     required DetectionMode detectionMode,
     required ApiMode api,
@@ -89,8 +88,7 @@ class CameraController {
     try {
       final cameraInfo = await _platform.init(
         types,
-        resolution,
-        framerate,
+        mode,
         detectionMode,
         position,
         api,
@@ -109,8 +107,8 @@ class CameraController {
 
       _platform.setOnDetectionHandler(_onDetectHandler);
 
-      final scanner = ScannerConfiguration(
-          types, resolution, framerate, position, detectionMode);
+      final scanner =
+          ScannerConfiguration(types, mode, position, detectionMode);
 
       state.value = ScannerState(cameraInfo, scanner, false, null);
       eventNotifier.value = ScannerEvent.resumed;
@@ -203,8 +201,7 @@ class CameraController {
 
   Future<void> configure({
     List<BarcodeType>? types,
-    Resolution? resolution,
-    Framerate? framerate,
+    PerformanceMode? mode,
     DetectionMode? detectionMode,
     CameraPosition? position,
     OnDetectionHandler? onScan,
@@ -218,16 +215,14 @@ class CameraController {
     try {
       final preview = await _platform.changeConfiguration(
         types: types,
-        resolution: resolution,
-        framerate: framerate,
+        mode: mode,
         detectionMode: detectionMode,
         position: position,
       );
 
       final scanner = scannerConfig.copyWith(
         types: types,
-        resolution: resolution,
-        framerate: framerate,
+        mode: mode,
         detectionMode: detectionMode,
         position: position,
       );

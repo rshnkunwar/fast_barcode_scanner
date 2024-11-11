@@ -38,8 +38,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   /// Returns the [CameraInformation] the camera is setup with.
   Future<CameraInformation> init(
     List<BarcodeType> types,
-    Resolution resolution,
-    Framerate framerate,
+    PerformanceMode mode,
     DetectionMode detectionMode,
     CameraPosition position,
     ApiMode api,
@@ -93,8 +92,7 @@ abstract class FastBarcodeScannerPlatform extends PlatformInterface {
   /// TODO: Which camera states are supported?
   Future<CameraInformation> changeConfiguration({
     List<BarcodeType>? types,
-    Resolution? resolution,
-    Framerate? framerate,
+    PerformanceMode? mode,
     DetectionMode? detectionMode,
     CameraPosition? position,
   }) {
