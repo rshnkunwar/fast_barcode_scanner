@@ -43,8 +43,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           final scan = history.scans[history.scans.length - idx - 1];
           return ListTile(
             title: Text(scan.value),
-            subtitle: Text(
-                "${scan.type.name} - ${scan.valueType != null ? scan.valueType!.name : ""}"),
+            subtitle: Text(scan.type.name),
           );
         },
         separatorBuilder: (_, __) => const Divider(height: 1),
