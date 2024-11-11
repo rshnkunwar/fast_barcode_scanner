@@ -1,47 +1,53 @@
-/// Contains all currently on iOS and Android supported barcode types.
+/// The currently supported barcode types.
+///
+/// Sources:
+///
+/// - https://developer.apple.com/documentation/vision/vnbarcodesymbology
+/// - https://developer.apple.com/documentation/avfoundation/avmetadatamachinereadablecodeobject/machine-readable_object_types
+/// - https://developers.google.com/android/reference/com/google/mlkit/vision/barcode/common/Barcode.BarcodeFormat
 enum BarcodeType {
-  /// Android, iOS
+  /// iOS, Android
   aztec,
 
-  /// Android, iOS
-  code128,
-
-  /// Android, iOS
-  code39,
-
-  /// iOS
-  code39mod43,
-
-  /// Android, iOS
-  code93,
-
-  /// Android
+  /// iOS, Android
   codabar,
 
-  /// Android, iOS
+  /// iOS, Android
+  code128,
+
+  /// iOS, Android
+  code39,
+
+  /// iOS, Android
+  code93,
+
+  /// iOS, Android
   dataMatrix,
 
-  /// Android, iOS
+  /// iOS, Android
   ean13,
 
-  /// Android, iOS
+  /// iOS, Android
   ean8,
 
-  /// Android, iOS
+  /// iOS
+  gs1DataBar,
+
+  /// iOS, Android
   itf,
 
-  /// Android, iOS
+  /// iOS
+  msi,
+
+  /// iOS, Android
   pdf417,
 
-  /// Android, iOS
+  /// iOS, Android
   qr,
 
-  /// Android, iOS
+  /// iOS, Android
   upcA,
 
-  /// Android, iOS
-  upcE,
-
-  /// iOS
-  interleaved,
+  /// iOS, Android
+  upcE
 }
